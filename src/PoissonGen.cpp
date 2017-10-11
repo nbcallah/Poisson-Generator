@@ -10,29 +10,20 @@ poissonGen::poissonGen(double maxRate) {
 poissonGen::~poissonGen() {
 }
 
-std::vector<double> poissonGen::getNEvents(unsigned int num) {
-	std::vector<double> events;
-	for(unsigned int i = 0; i < num; i++) {
-		events.push_back(this->getNextEvent());
+double poissonGen::getNextEvent(double maxTime) {
+	this->currentTime += -log(this->getUniformNumber())/(this->maxRate);
+	while(this->getUniformNumber() > this->evaluateFunction(this->currentTime)/this->maxRate && this->currentTime < maxTime) {
+		this->currentTime += -log(this->getUniformNumber())/(this->maxRate);
 	}
-	return events;
-}
-
-double poissonGen::getNextEvent() {
-	currentTime += -log(this->getUniformNumber())/(it->maxRate);
-	while(this->getUniformNumber() > this->evaluateFunction(this->currentTime)/this->maxRate) {
-		currentTime += -log(this->getUniformNumber())/(it->maxRate);
-	}
-	
-	return currentTime;
+	return this->currentTime < maxTime ? this->currentTime : std::numeric_limits<double>::infinity();
 }
 
 std::vector<double> poissonGen::getEventsToTime(double length) {
 	std::vector<double> events;
-	event = this->getNextEvent();
+	double event = this->getNextEvent(length);
 	while(event < length) {
 		events.push_back(event);
-		event = this->getNextEvent();
+		event = this->getNextEvent(length);
 	}
 
 	return events;

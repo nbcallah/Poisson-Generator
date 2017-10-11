@@ -1,4 +1,4 @@
 *.[oa]
 *.so
 *~
-test/Test
+simulate_counting_with_background/sim
