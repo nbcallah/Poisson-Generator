@@ -1,7 +1,7 @@
 CC = gcc
 CPP = g++
 CPLUSPLUS11 = -std=c++11
-CFLAGS = -O3 -arch i386 -arch x86_64
+CFLAGS = -g -arch i386 -arch x86_64
 
 all: sim
 
