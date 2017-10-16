@@ -57,6 +57,71 @@ double constantCountingProcess::evaluateFunction(double t) {
 	return rate;
 }
 
+class dipStructure {
+	public:
+	dipStructure(int numDips, double* dipTCs, double* dipLengths, double* dipStrengths, double numHits, double hold_t, std::mt19937_64* gen);
+	double getShortMean();
+	double getLongMean();
+	
+	private:
+	std::vector<double> dipLengths;
+	std::vector<double> offsets;
+	std::vector<exponentialCountingProcess> dipShort;
+	std::vector<exponentialCountingProcess> dipLong;
+	constantCountingProcess bkg;
+};
+
+double dipStructure::getShortMean() {
+	double sumShort = 0.0;
+	double ctsShort = 0.0;
+	for(int i = 0; i < dipLengths.size(); i++) {
+		dipShort[i].setTime(0.0);
+		std::vector<double> cts = dipShort[i].getEventsToTime(dipLengths[i]);
+		sumShort += std::accumulate(cts.begin(), cts.end(), 0.0);
+		sumShort += offsets[i]*cts.size();
+		ctsShort += cts.size();
+		bkg.setTime(0.0);
+		std::vector<double> bkgCts = bkg.getEventsToTime(dipLengths[i]);
+		sumShort += std::accumulate(bkgCts.begin(), bkgCts.end(), 0.0);
+		sumShort += offsets[i]*bkgCts.size();
+		ctsShort += bkgCts.size();
+	}
+	return sumShort/ctsShort;
+}
+
+double dipStructure::getLongMean() {
+	double sumLong = 0.0;
+	double ctsLong = 0.0;
+	for(int i = 0; i < dipLengths.size(); i++) {
+		dipLong[i].setTime(0.0);
+		std::vector<double> cts = dipLong[i].getEventsToTime(dipLengths[i]);
+		sumLong += std::accumulate(cts.begin(), cts.end(), 0.0);
+		sumLong += offsets[i]*cts.size();
+		ctsLong += cts.size();
+		bkg.setTime(0.0);
+		std::vector<double> bkgCts = bkg.getEventsToTime(dipLengths[i]);
+		sumLong += std::accumulate(bkgCts.begin(), bkgCts.end(), 0.0);
+		sumLong += offsets[i]*bkgCts.size();
+		ctsLong += bkgCts.size();
+	}
+	return sumLong/ctsLong;
+}
+
+dipStructure::dipStructure(int numDips, double* dipTCs, double* dipLengths, double* dipStrengths, double numHits, double hold_t, std::mt19937_64* gen) : bkg(0.15, gen) {
+	double dip_norm = 0.0;
+	for(int i = 0; i < numDips; i++) {
+		dip_norm += dipStrengths[i]*(1-exp(-(dipLengths[i])/dipTCs[i]));
+	}
+	dip_norm = 1.0/dip_norm;
+	
+	for(int i = 0; i < numDips; i++) {
+		offsets.push_back(std::accumulate(this->dipLengths.begin(), this->dipLengths.end(), 0.0));
+		this->dipLengths.push_back(dipLengths[i]);
+		dipShort.push_back(exponentialCountingProcess(numHits*dip_norm*dipStrengths[i], dipTCs[i], gen));
+		dipLong.push_back(exponentialCountingProcess(numHits*exp(-hold_t/877.7)*dip_norm*dipStrengths[i], dipTCs[i], gen));
+	}
+}
+
 int main(int argc, char** argv) {
 	std::vector<uint64_t> seed;
 	seed.push_back(2736687128);
@@ -67,120 +132,47 @@ int main(int argc, char** argv) {
 	std::mt19937_64 gen;
 	gen.seed(sseq);
 	
-//	auto getMeanTime = [](std::vector<double> &sig, std::vector<double> &bkg)->double{
-//		double mean = 0.0;
-//		for(auto it = sig.begin(); it < sig.end(); it++) {
-//			mean += *it;
-//		}
-//		for(auto it = bkg.begin(); it < bkg.end(); it++) {
-//			mean += *it;
-//		}
-//		mean = mean / ((double)sig.size() + (double)bkg.size());
-//		return mean;
-//	};
-	auto getSumTime = [](std::vector<double> &sig)->double{
-		double sum = 0.0;
-		for(auto it = sig.begin(); it < sig.end(); it++) {
-			sum += *it;
-		}
-		return sum;
-	};
+//	double dip9_TCs[9] = {100, 65.981913, 23.739640, 19.241204, 18.700906, 17.779887, 19.758315, 14.361219, 8.065494};
+//	double dip9_lengths[9] = {20, 40, 20, 20, 20, 20, 20, 20, 60};
+//	double dip9_strengths[9] = {0.00000000001, 0.002746, 0.010865, 0.013028, 0.011499, 0.012766, 0.009688, 0.008515, 0.003804};
+//	dipStructure dips(9, &dip9_TCs[0], &dip9_lengths[0], &dip9_strengths[0], 21700, 990, &gen);
 	
-//	dip dip1_arr[1] = {{7.8, 0.0, 1.0}};
-//	const int numDips = 1;
-//	dip dip3_arr[2] = {{52, 0.0, 0.0027}, {7.8, 20.0, 0.083}};
-//  const int numDips = 2;
-	double dip9_arr[8][3] = {{65.981913, 0.000000, 0.002746}, {23.739640, 40.000000, 0.010865}, {19.241204, 60.000000, 0.013028}, {18.700906, 80.000000, 0.011499}, {17.779887, 100.000000, 0.012766}, {19.758315, 120.000000, 0.009688}, {14.361219, 140.000000, 0.008515}, {8.065494, 160.000000, 0.003804}};
-	const int numDips = 8;
+	double dip1_TCs[1] = {8.0};
+	double dip1_lengths[1] = {100.0};
+	double dip1_strengths[1] = {1.0};
+	dipStructure dips(1, &dip1_TCs[0], &dip1_lengths[0], &dip1_strengths[0], 22000, 990, &gen);
 	
-	double dip_norm = 0.0;
-		for(int i = 0; i < 7; i++) {
-		dip_norm += dip9_arr[i][2]*(1-exp(-(dip9_arr[i+1][1]-dip9_arr[i][1])/dip9_arr[i][0]));
-	}
-	dip_norm += dip9_arr[7][2]*(1-exp(-100/dip9_arr[7][0]));
-	dip_norm = 1.0/dip_norm;
-	
-	constantCountingProcess bkg(0.1176, &gen);
-	std::vector<exponentialCountingProcess> dip9Short;
-	std::vector<exponentialCountingProcess> dip9Long;
-	for(int i = 0; i < 8; i++) {
-		dip9Short.push_back(exponentialCountingProcess(15000*dip_norm*dip9_arr[i][2], dip9_arr[i][0], &gen));
-		dip9Long.push_back(exponentialCountingProcess(15000*exp(-1020.0/877.7)*dip_norm*dip9_arr[i][2], dip9_arr[i][0], &gen));
-	}
-	const int numSamples = 100;
-	const int numRuns = 70;
+	std::vector<double> avgDifferences;
+	const int numSamples = 200;
+	const int numRuns = 55;
 	for(int i = 0; i < numSamples; i++) {
 		std::vector<double> meanTimeShort;
 		std::vector<double> meanTimeLong;
 		for(int j = 0; j < numRuns; j++) {
-			double sumShort = 0.0;
-			double ctsShort = 0;
-			for(auto it = dip9Short.begin(); it < dip9Short.end(); it++) {
-				it->setTime(0.0);
-			}
-			for(int dipNum = 0; dipNum < 7; dipNum++) {
-				std::vector<double> cts = dip9Short[dipNum].getEventsToTime(dip9_arr[dipNum+1][1]-dip9_arr[dipNum][1]);
-				sumShort += getSumTime(cts);
-				sumShort += (dip9_arr[dipNum][1])*cts.size();
-				ctsShort += cts.size();
-				bkg.setTime(0.0);
-				std::vector<double> bkgCts = bkg.getEventsToTime(dip9_arr[dipNum+1][1]-dip9_arr[dipNum][1]);
-				sumShort += getSumTime(bkgCts);
-				sumShort += (dip9_arr[dipNum][1])*bkgCts.size();
-				ctsShort += bkgCts.size();
-			}
-			std::vector<double> cts = dip9Short[7].getEventsToTime(100);
-			sumShort += getSumTime(cts);
-			sumShort += (dip9_arr[7][1])*cts.size();
-			ctsShort += cts.size();
-			bkg.setTime(0.0);
-			std::vector<double> bkgCts = bkg.getEventsToTime(100);
-			sumShort += getSumTime(bkgCts);
-			sumShort += (dip9_arr[7][1])*bkgCts.size();
-			ctsShort += bkgCts.size();
-			meanTimeShort.push_back(sumShort/ctsShort);
+			meanTimeShort.push_back(dips.getShortMean());
 		}
 		for(int j = 0; j < numRuns; j++) {
-			double sumLong = 0.0;
-			double ctsLong = 0;
-			for(auto it = dip9Long.begin(); it < dip9Long.end(); it++) {
-				it->setTime(0.0);
-			}
-			for(int dipNum = 0; dipNum < 7; dipNum++) {
-				std::vector<double> cts = dip9Long[dipNum].getEventsToTime(dip9_arr[dipNum+1][1]-dip9_arr[dipNum][1]);
-				sumLong += getSumTime(cts);
-				sumLong += (dip9_arr[dipNum][1])*cts.size();
-				ctsLong += cts.size();
-				bkg.setTime(0.0);
-				std::vector<double> bkgCts = bkg.getEventsToTime(dip9_arr[dipNum+1][1]-dip9_arr[dipNum][1]);
-				sumLong += getSumTime(bkgCts);
-				sumLong += (dip9_arr[dipNum][1])*bkgCts.size();
-				ctsLong += bkgCts.size();
-			}
-			std::vector<double> cts = dip9Long[7].getEventsToTime(100);
-			sumLong += getSumTime(cts);
-			sumLong += (dip9_arr[7][1])*cts.size();
-			ctsLong += cts.size();
-			bkg.setTime(0.0);
-			std::vector<double> bkgCts = bkg.getEventsToTime(100);
-			sumLong += getSumTime(bkgCts);
-			sumLong += (dip9_arr[7][1])*bkgCts.size();
-			ctsLong += bkgCts.size();
-			meanTimeLong.push_back(sumLong/ctsLong);
+			meanTimeLong.push_back(dips.getLongMean());
 		}
 		double avgDiff = 0.0;
 		for(int j = 0; j < numRuns; j++) {
 			avgDiff += (meanTimeLong[j]-meanTimeShort[j]);
 		}
 		avgDiff = avgDiff/numRuns;
+		avgDifferences.push_back(avgDiff);
 		double stddev = 0.0;
 		for(int j = 0; j < numRuns; j++) {
 			stddev += pow((meanTimeLong[j]-meanTimeShort[j])-avgDiff, 2);
 		}
 		stddev = stddev/(numRuns - 1);
 		stddev = sqrt(stddev);
-		printf("Avg: %f stddev: %f\n", avgDiff, stddev);
+		printf("Avg: %f stddev: %f\n", avgDiff, stddev/sqrt(1));
 	}
+	
+	double mean = std::accumulate(avgDifferences.begin(), avgDifferences.end(), 0.0) / avgDifferences.size();
+	double meanstddev = sqrt(std::accumulate(avgDifferences.begin(), avgDifferences.end(), 0.0, [mean](double sum, double val){return sum + pow(val - mean, 2);})/(avgDifferences.size()-1));
+	printf("Mean: %f stddev: %f\n", mean, meanstddev);
+	
 	
 	return 0;
 }
