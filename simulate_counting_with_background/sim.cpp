@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
 	
 //	double dip9_TCs[9] = {100, 65.981913, 23.739640, 19.241204, 18.700906, 17.779887, 19.758315, 14.361219, 8.065494};
 //	double dip9_lengths[9] = {20, 40, 20, 20, 20, 20, 20, 20, 60};
-//	double dip9_strengths[9] = {0.00000000001, 0.002746, 0.010865, 0.013028, 0.011499, 0.012766, 0.009688, 0.008515, 0.003804};
+//	double dip9_strengths[9] = {0.0000000000001, 0.002746, 0.010865, 0.013028, 0.011499, 0.012766, 0.009688, 0.008515, 0.003804};
 //	dipStructure dips(9, &dip9_TCs[0], &dip9_lengths[0], &dip9_strengths[0], 21700, 990, &gen);
 	
 	double dip1_TCs[1] = {8.0};
@@ -142,9 +142,14 @@ int main(int argc, char** argv) {
 	double dip1_strengths[1] = {1.0};
 	dipStructure dips(1, &dip1_TCs[0], &dip1_lengths[0], &dip1_strengths[0], 22000, 990, &gen);
 	
+//	double dip3_TCs[3] = {100, 52, 7.8};
+//	double dip3_lengths[3] = {20, 20, 100};
+//	double dip3_strengths[3] = {0.0000000000001, 0.0027, 0.083};
+//	dipStructure dips(3, &dip3_TCs[0], &dip3_lengths[0], &dip3_strengths[0], 28500, 1370, &gen);
+	
 	std::vector<double> avgDifferences;
 	const int numSamples = 200;
-	const int numRuns = 55;
+	const int numRuns = 700;
 	for(int i = 0; i < numSamples; i++) {
 		std::vector<double> meanTimeShort;
 		std::vector<double> meanTimeLong;
