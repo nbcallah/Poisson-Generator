@@ -103,7 +103,7 @@ Virtual method that evaluates the rate function at time t.
 
 Compile the source in the simulate_counting_with_background directory and run minimal. Output should be number of events generated in the first 20s of a process with a rate that goes ~exp(-t/10) with 100 events expected out to infinity.
 
-The program sim contains a slightly more complicated scenario: A number of exponential counting processes (between 1-9) are concatenated. A uniform background is also added. The difference in mean arrival time between a process with high signal to background ratio and a process with a low signal to background. The average difference is calculated over many simulated runs.
+The program sim contains a slightly more complicated scenario: A number of exponential counting processes (between 1-9) are concatenated. A uniform background is also added. The difference in mean arrival time between a process with high signal to background ratio and a process with a low signal to background is measured. The average difference is calculated over many simulated runs.
 
 ## Contributors
 
