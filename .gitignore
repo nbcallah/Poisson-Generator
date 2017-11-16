@@ -2,5 +2,6 @@
 *.so
 *~
 simulate_counting_with_background/sim
+simulate_counting_with_background/minimal
 simulate_counting_with_background/data/*
 *.dSYM
